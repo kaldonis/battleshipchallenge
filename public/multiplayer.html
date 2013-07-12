@@ -1,0 +1,99 @@
+<html>
+<head>
+    <title>Snake Scripting Challenge - Multiplayer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css"/>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+    <script src="http://www.parsecdn.com/js/parse-1.2.8.min.js"></script>
+    <script src="/static/js/knockout-2.2.1.js"></script>
+    <script type="text/javascript" src="/static/js/common.js"></script>
+    <script type="text/javascript" src="/static/js/user.js"></script>
+    <script type="text/javascript" src="/static/js/game.js"></script>
+    <script type="text/javascript" src="/static/js/multi.js"></script>
+</head>
+<body id="multiplayer">
+<div id="fb-root"></div>
+<script>
+    window.fbAsyncInit = function () {
+        Parse.FacebookUtils.init({
+            appId: '550911944955409', // Facebook App ID
+            channelUrl: '//snake-challenge.parseapp.com/channel.html', // Channel File
+            cookie: true, // enable cookies to allow Parse to access the session
+            xfbml: true  // parse XFBML
+        });
+    };
+
+    // Load the SDK asynchronously
+    (function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) {
+            return;
+        }
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "//connect.facebook.net/en_US/all.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+</script>
+<div class="container-fluid">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <a class="brand active" href="/">Snake Scripting Challenge</a>
+            <ul class="nav">
+                <li><a href="/leaderboard.html">Leaderboard</a></li>
+                <li class="active"><a href="/multiplayer.html">Multiplayer</a></li>
+            </ul>
+            <ul class="nav pull-right">
+                <li><a href="#" data-bind="click: $root.login.bind($root), visible: !user()">Login</a></li>
+                <li><a href="#" data-bind="click: $root.logout.bind($root), visible: user">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="span12">
+            <div class="controls">
+                <div class="btn-group">
+                    <button class="btn btn-primary" data-bind="click: $root.start.bind($root)">Start!</button>
+                    <button class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <label>Game Speed: <span data-bind="text: speed"></span></label>
+                            <input class="fps-control" type="range" min="1" max="60" data-bind="value: speed">
+                        </li>
+                        <li class="divider"></li>
+                        <li>
+                            <div class="input-append">
+                                <input class="span4" type="number" data-bind="value: movesToSkip"
+                                       onclick="event.stopPropagation();">
+                                <button class="btn" data-bind="click: $root.skipMoves.bind($root)">Skip Moves</button>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+                <span class="description">Your script competing with up to seven of the site's best!</span>
+                <div class="progress" data-bind="visible: showSkipProgress">
+                    <div class="bar" data-bind="style: { width: skipProgress() + '%' }"></div>
+                </div>
+            </div>
+            <ul id="game-boards" data-bind="foreach: users, fadeVisible: showGameBoards">
+                <li>
+                    <h2 data-bind="text: name"></h2>
+                    <div>Score: <span data-bind="text: score"></span></div>
+                    <canvas data-bind="attr: { id: board_id }" width="320" height="240"></canvas>
+                    <div data-bind="text: init()"></div> <!-- Hack to run the init() function after the canvas exists -->
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    Parse.initialize("rwqT1Ag7cow4gldZchA3Gr5s3TnDCdmZnxSGAjqP", "MY0rT3SUsR52DnrPHM8vz2YPxq9ZBxuRhaeCQqHe");
+    ko.applyBindings(new MultiGameViewModel());
+</script>
+</html>

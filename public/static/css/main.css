@@ -1,0 +1,79 @@
+canvas {
+  background-color: #003366;
+  border: solid 2px #00F;
+  border-radius: 4px;
+  margin-bottom: 10px; }
+
+#singleplayer label, #singleplayer .btn {
+  margin-bottom: 10px; }
+#singleplayer .span3 {
+  max-width: 320px; }
+  #singleplayer .span3 .btn-group {
+    margin-bottom: 0px; }
+#singleplayer .code-header h4 {
+  display: inline; }
+#singleplayer .CodeMirror {
+  width: 100%;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  border: 1px solid black;
+  font-size: 13px; }
+
+#multiplayer .controls {
+  margin-bottom: 10px; }
+  #multiplayer .controls .description {
+    float: right;
+    margin-top: 5px; }
+  #multiplayer .controls .progress {
+    margin-top: 10px; }
+#multiplayer #game-boards {
+  list-style-type: none;
+  position: relative;
+  margin: 0px; }
+  #multiplayer #game-boards h2 {
+    font-size: 1.5em;
+    line-height: .5em;
+    margin-bottom: 5px; }
+  #multiplayer #game-boards li {
+    float: left;
+    padding-left: 5px;
+    padding-right: 5px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    -webkit-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out; }
+
+.btn-group {
+  margin-bottom: 10px; }
+  .btn-group .btn {
+    margin-bottom: 0px; }
+  .btn-group .caret {
+    margin-top: 8px;
+    margin-bottom: 8px; }
+  .btn-group .dropdown-menu {
+    padding: 10px; }
+    .btn-group .dropdown-menu .fps-control {
+      width: 100%; }
+    .btn-group .dropdown-menu .span4 {
+      width: auto; }
+
+.input-append {
+  margin-bottom: 0px; }
+
+.progress {
+  margin-bottom: 10px; }
+
+.progress .bar {
+  -webkit-transition: none;
+  -moz-transition: none;
+  -ms-transition: none;
+  -o-transition: none;
+  transition: none; }
+
+.table th.text-right, .table td.text-right {
+  text-align: right; }
+
+.alert {
+  margin-top: 10px;
+  margin-bottom: 10px; }

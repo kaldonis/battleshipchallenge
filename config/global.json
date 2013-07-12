@@ -1,0 +1,14 @@
+{
+    "applications": {
+        "Snake Scripting Challenge": {
+            "applicationId": "rwqT1Ag7cow4gldZchA3Gr5s3TnDCdmZnxSGAjqP", 
+            "masterKey": "VCJL3wjD1tyEJUoBH8xp2Y4PDcQHSfglxUxeV62q"
+        }, 
+        "_default": {
+            "link": "Snake Scripting Challenge"
+        }
+    }, 
+    "global": {
+        "parseVersion": "1.2.8"
+    }
+}
