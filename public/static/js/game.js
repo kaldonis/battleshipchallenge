@@ -220,7 +220,7 @@ function SingleGameViewModel(canvas) {
     function loop() {
         self.game().gameLoop();
         if (self.game().over()) {
-            clearTimeout(self.timer);
+            self.timer = clearTimeout(self.timer);
             if (self.game().score() > 0) {
                 function saveHighScore(user) {
                     self.user(user);
@@ -271,7 +271,7 @@ function SingleGameViewModel(canvas) {
     };
 
     self.skipMoves = function () {
-        clearTimeout(self.timer);
+        self.timer = clearTimeout(self.timer);
         self.skipProgress(0);
         self.showSkipProgress(true);
         self.game().skipMoves(self.movesToSkip());
