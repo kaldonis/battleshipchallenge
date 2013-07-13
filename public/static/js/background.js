@@ -4,6 +4,7 @@ function BackgroundGameViewModel() {
     var self = this;
     self.eaten = 0;
     self.moves = 0;
+    self.code = '';
 
     self.over = false;
 
@@ -22,7 +23,12 @@ function BackgroundGameViewModel() {
 
     self.setCode = function (code) {
         // This allows the user to provide a generic javascript function, without worrying what function to override.
-        eval('self.getDirection = ' + code + ';');
+        self.code = code;
+        try {
+            eval('self.getDirection = ' + code + ';');
+        } catch (e) {
+            postMessage({'error': 'Error setting this code:\n' + code + '\n' + e.message})
+        }
     };
 
     self.start = function () {
@@ -139,7 +145,7 @@ function BackgroundGameViewModel() {
                     self.direction = new_direction;
                 }
             } catch (e) {
-                postMessage({'error': e.message})
+                postMessage({'error': 'Error moving direction with this code:\n' + self.code + '\n' + e.message})
             }
             restoreGameState(gameState);
             move();
