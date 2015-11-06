@@ -1,0 +1,164 @@
+<html>
+<head>
+    <title>Snake Scripting Challenge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/static/css/main.css"/>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
+    <script src="http://www.parsecdn.com/js/parse-1.2.8.min.js"></script>
+    <script src="/static/js/knockout-2.2.1.js"></script>
+    <script src="/static/js/user.js"></script>
+    <script src="/static/js/documentation.js"></script>
+</head>
+<body id="documentation">
+<div id="fb-root"></div>
+<script>
+    window.fbAsyncInit = function () {
+        Parse.FacebookUtils.init({
+            appId: '550911944955409', // Facebook App ID
+            channelUrl: '//snake-challenge.parseapp.com/channel.html', // Channel File
+            cookie: true, // enable cookies to allow Parse to access the session
+            xfbml: true  // parse XFBML
+        });
+    };
+
+    // Load the SDK asynchronously
+    (function (d, s, id) {
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) {
+            return;
+        }
+        js = d.createElement(s);
+        js.id = id;
+        js.src = "//connect.facebook.net/en_US/all.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+</script>
+<div class="container-fluid">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <a class="brand active" href="/">Snake Scripting Challenge</a>
+            <ul class="nav">
+                <li class="active"><a href="/documentation.html">Documentation</a></li>
+                <li><a href="/leaderboard.html">Leaderboard</a></li>
+                <li><a href="/multiplayer.html">Multiplayer</a></li>
+            </ul>
+            <ul class="nav pull-right">
+                <li><a href="#" data-bind="click: $root.login.bind($root), visible: !user()">Login</a></li>
+                <li><a href="#" data-bind="click: $root.logout.bind($root), visible: user">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div>
+            <h3>Overview</h3>
+            <p>Your code <strong>must</strong> be in the following syntax in order to work:</p>
+            <pre>
+function yourScript() {
+    return LEFT; // Can also be RIGHT, UP, and DOWN
+}
+            </pre>
+            <p>Keep all code in a <strong>single function</strong> (inner functions are allowed).</p>
+            <p>If your code returns an invalid direction (including inverse directions), your snake will continue in the current direction.</p>
+            <p>You have access to the <code>self</code> variable to save state between moves, as well as access to game state.</p>
+            <pre>
+function yourScript() {
+   self.myLastMove = LEFT;
+   return self.myLastMove;
+}
+            </pre>
+            <p>Logging is available through <code>console.log(message)</code>.  You can also use <code>console.error(message)</code>, <code>console.warn(message)</code>, and <code>console.debug(message)</code>.
+            These are simulated console functions (since your code runs in a web worker), so be advised they might not work exactly as the builtin console functions.
+            </p>
+            <p>All built-in game state variables (other than direction) are backed up prior, and restored after, your function is called.  This prevents tampering.</p>
+            <h3>Constants</h3>
+            <pre>
+var BOARD_WIDTH = 40;
+var BOARD_HEIGHT = 30;
+var BOARD_SIZE = BOARD_WIDTH * BOARD_HEIGHT;
+
+var UP = 'up';
+var LEFT = 'left';
+var RIGHT = 'right';
+var DOWN = 'down';
+
+var inverseDirection = { // NOTE: Invalid Moves
+    'up': 'down',
+    'left': 'right',
+    'right': 'left',
+    'down': 'up'
+};
+            </pre>
+            <h3>Properties</h3>
+            <table class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>Property</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr><td><code>self.eaten</code></td>
+                <td>An integer indicating the amount of food eaten before the next move</td></tr>
+                <tr><td><code>self.moves</code></td>
+                <td>An integer indicating the number of moves taken before the next move</td></tr>
+                <tr><td><code>self.head_x</code></td>
+                <td>An integer indicating the snake head's x position</td></tr>
+                <tr><td><code>self.head_y</code></td>
+                <td>An integer indicating the snake head's y position</td></tr>
+                <tr><td><code>self.direction</code></td>
+                <td>A string indicating the snake's direction during the previous move</td></tr>
+                <tr><td><code>self.snake_sections</code></td>
+                <td>An array of strings indicating the snake's currently occupied positions, in the format <code>["x,y", "x,y"...]</code></td></tr>
+                <tr><td><code>self.food_x</code></td>
+                <td>An integer indicating the food x position</td></tr>
+                <tr><td><code>self.food_y</code></td>
+                <td>An integer indicating the food y position</td></tr>
+                </tbody>
+            </table>
+            <h3>Functions</h3>
+            <table class="table table-bordered table-striped">
+                <thead>
+                <tr>
+                    <th>Function</th>
+                    <th>Description</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr><td><code>self.peekForCollision(direction)</code></td>
+                <td>Takes a direction, and returns true if the next move will result in a collision if you move in that direction</td></tr>
+                <tr><td><code>self.compare(a, b)</code></td>
+                <td>Compares two integers, returns 1 if a > b, 0 if a = b, and -1 if a < b</td></tr>
+                <tr><td><code>self.isFoodBelow()</code></td>
+                <td>Returns true if the food is currently anywhere below (not necessarily inline) the snake's head</td></tr>
+                <tr><td><code>self.isFoodAbove()</code></td>
+                <td>Returns true if the food is currently anywhere above (not necessarily inline) the snake's head</td></tr>
+                <tr><td><code>self.isFoodLeft()</code></td>
+                <td>Returns true if the food is currently anywhere left (not necessarily inline) of the snake's head</td></tr>
+                <tr><td><code>self.isFoodRight()</code></td>
+                <td>Returns true if the food is currently anywhere right (not necessarily inline) of the snake's head</td></tr>
+                <tr><td><code>self.isFoodInverse()</code></td>
+                <td>Returns true if the food is directly inverse (same line, opposite direction of current direction) of the snake's head</td></tr>
+                <tr><td><code>self.getClockwiseDirection(direction)</code></td>
+                <td>Takes a direction, and returns the clockwise direction of that direction</td></tr>
+                <tr><td><code>self.getCounterClockwiseDirection(direction)</code></td>
+                <td>Takes a direction, and returns the counter-clockwise direction of that direction</td></tr>
+                <tr><td><code>self.isCellEmpty(x, y)</code></td>
+                <td>Takes an x integer and a y integer and returns true if the cell is currently not occupied by your snake</td></tr>
+                <tr><td><code>self.isCellOccupied(x, y)</code></td>
+                <td>Takes an x integer and a y integer and returns true if the cell is currently occupied by your snake</td></tr>
+                <tr><td><code>self.getOpenCellDirections()</code></td>
+                <td>Returns an array of directions that will not result in a collision</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    Parse.initialize("rwqT1Ag7cow4gldZchA3Gr5s3TnDCdmZnxSGAjqP", "MY0rT3SUsR52DnrPHM8vz2YPxq9ZBxuRhaeCQqHe");
+    ko.applyBindings(new DocumentationViewModel());
+</script>
+</html>

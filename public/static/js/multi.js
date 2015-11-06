@@ -5,10 +5,16 @@ function MultiGameUserViewModel(user, index) {
     self.name = self.user().get('displayName');
     self.score = ko.observable(0);
     self.skipProgress = ko.observable(0);
+    self.initialized = false;
 
     self.init = function() {
+        if (self.initialized) {
+            return;
+        }
+        self.initialized = true;
         self.canvas = document.getElementById(self.board_id());
         self.gameViewModel = ko.observable(new GameViewModel(self.canvas));
+        self.gameViewModel().displayName(self.name);
         self.gameViewModel().setCode(self.user().get('script'));
         self.gameViewModel().score.subscribe(function(newValue) {
             self.score(newValue);
@@ -16,12 +22,17 @@ function MultiGameUserViewModel(user, index) {
         self.gameViewModel().skipProgress.subscribe(function(newValue) {
             self.skipProgress(newValue);
         });
-    }
+    };
 }
 
 function MultiGameViewModel() {
     var self = this;
     self.speed = ko.observable(60);
+    self.speed.subscribe(function(value) {
+        ko.utils.arrayForEach(self.users(), function(user) {
+            user.gameViewModel().setSpeed(value);
+        });
+    });
     self.movesToSkip = ko.observable(5000);
     self.skipProgress = ko.observable(0);
     self.showSkipProgress = ko.observable(false);
@@ -48,9 +59,7 @@ function MultiGameViewModel() {
             user.gameViewModel().start();
         });
         if (!self.timer) {
-            self.timer = setTimeout(function() {
-                requestAnimationFrame(loop);
-            }, 0);
+            self.timer = setTimeout(loop, 1000);
         }
     };
 
@@ -106,9 +115,6 @@ function MultiGameViewModel() {
 
     function loop() {
         if (!self.showSkipProgress()) {
-            ko.utils.arrayForEach(self.users(), function(user) {
-                user.gameViewModel().gameLoop();
-            });
             self.sortByScore();
         } else {
             var skipProgress = 0;
@@ -121,10 +127,16 @@ function MultiGameViewModel() {
                 self.showSkipProgress(false);
             }
         }
-        self.timer = setTimeout(function () {
-            requestAnimationFrame(loop);
-        }, 1000 / self.speed());
+        self.timer = setTimeout(loop, 1000);
     }
+
+    function render() {
+        requestAnimationFrame(render);
+        ko.utils.arrayForEach(self.users(), function(user) {
+            user.gameViewModel().drawGame();
+        });
+    }
+    requestAnimationFrame(render);
 
     // Workaround for Webkit bug: force scroll height to be recomputed after the transition ends, not only when it starts
     $('#game-boards').on("webkitTransitionEnd", function () {

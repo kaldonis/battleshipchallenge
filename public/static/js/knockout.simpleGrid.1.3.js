@@ -46,7 +46,7 @@
     };
 
     templateEngine.addTemplate("ko_simpleGrid_grid", "\
-                    <table class=\"ko-grid table table-striped table-condensed\" cellspacing=\"0\">\
+                    <table class=\"ko-grid table table-striped table-condensed table-bordered\" cellspacing=\"0\">\
                         <thead>\
                             <tr data-bind=\"foreach: columns\">\
                                <th data-bind=\"text: headerText\"></th>\

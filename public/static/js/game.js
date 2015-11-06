@@ -12,6 +12,8 @@ function GameViewModel(canvas) {
     self.food_color = "rgba(255, 255, 255, 0.8)";
     self.message = ko.observable('CLICK START');
     self.skipProgress = ko.observable(0);
+    self.displayName = ko.observable(undefined);
+    self.data = undefined;
 
     self.eaten = ko.observable(0);
     self.moves = ko.observable(0);
@@ -46,41 +48,50 @@ function GameViewModel(canvas) {
         return self.food_x() + ', ' + self.food_y();
     });
 
-    drawMessage();
-
     self.setCode = function (code) {
-        self.worker.postMessage({CODE: code})
+        self.worker.postMessage({CODE: code});
     };
+
+    self.setSpeed = function(speed) {
+        self.worker.postMessage({SPEED: speed});
+    };
+
+    function formatLog(message) {
+        if (self.displayName()) {
+            message = self.displayName() + ': ' + message;
+        }
+        return message;
+    }
 
     self.worker = new Worker('/static/js/background.js');
     self.worker.addEventListener('message', function (e) {
-        if (e.data.EATEN != undefined) {
-            self.eaten(e.data.EATEN);
-            self.moves(e.data.MOVES);
-            self.over(e.data.OVER);
-            var food_temp = e.data.FOOD.split(',');
-            self.food_x(parseInt(food_temp[0]));
-            self.food_y(parseInt(food_temp[1]));
-            self.snake_sections(JSON.parse(e.data.SNAKE));
-            drawGame();
+        if (e.data.EATEN !== undefined) {
+            self.data = e.data;
         }
-        if (e.data.SKIP_PROGRESS != undefined) {
+        if (e.data.SKIP_PROGRESS !== undefined) {
             self.skipProgress(e.data.SKIP_PROGRESS);
+        }
+        if (e.data.LOG !== undefined) {
+            console.log(formatLog(e.data.LOG));
+        }
+        if (e.data.ERROR !== undefined) {
+            console.error(formatLog(e.data.ERROR));
+        }
+        if (e.data.WARN !== undefined) {
+            console.warn(formatLog(e.data.WARN));
+        }
+        if (e.data.DEBUG !== undefined) {
+            console.debug(formatLog(e.data.DEBUG));
         }
     }, false);
     self.worker.addEventListener('error', function (e) {
-        console.log(e.message);
-    }, false);
+        console.error(formatLog(e.message));
+    });
 
     self.start = function () {
         self.over(false);
         self.worker.postMessage(START);
     };
-
-    function stop() {
-        self.over(true);
-        self.message('GAME OVER - CLICK START');
-    }
 
     function drawBox(x, y, size, color) {
         x = x * self.square_size;
@@ -131,51 +142,94 @@ function GameViewModel(canvas) {
         drawBox(self.food_x(), self.food_y(), self.square_size, self.food_color);
     }
 
-    self.gameLoop = function () {
-        if (self.over() == false) {
-            self.worker.postMessage(MOVE);
-        }
-    };
-
     self.skipMoves = function(movesToSkip) {
-        self.worker.postMessage({SKIP: movesToSkip})
+        self.worker.postMessage({SKIP: movesToSkip});
     };
 
-    function drawGame() {
+    self.drawGame = function() {
+        if (self.data !== undefined) {
+            self.eaten(self.data.EATEN);
+            self.moves(self.data.MOVES);
+            self.over(self.data.OVER);
+            var head_temp = self.data.HEAD.split(',');
+            self.head_x(parseInt(head_temp[0]));
+            self.head_y(parseInt(head_temp[1]));
+            var food_temp = self.data.FOOD.split(',');
+            self.food_x(parseInt(food_temp[0]));
+            self.food_y(parseInt(food_temp[1]));
+            self.snake_sections(JSON.parse(self.data.SNAKE));
+            self.direction(self.data.DIRECTION);
+            self.data = undefined;
+        }
         resetCanvas();
-        drawScore();
-        drawFood();
-        drawSnake();
+        if (!self.over() || self.moves()) {
+            drawScore();
+            drawFood();
+            drawSnake();
+        }
         if (self.over()) {
             drawMessage();
         }
-    }
+    };
 }
 
 function SingleGameViewModel(canvas) {
     var self = this;
     self.game = ko.observable(new GameViewModel(canvas));
     self.speed = ko.observable(60);
+    self.speed.subscribe(function(value) {
+        self.game().setSpeed(value);
+    });
     self.movesToSkip = ko.observable(5000);
     self.skipProgress = ko.observable(0);
     self.showSkipProgress = ko.observable(false);
     self.showLoginAlert = ko.observable(false);
+    self.showSetScriptAlert = ko.observable(false);
     self.timer = undefined;
     self.user = ko.observable(Parse.User.current());
+    if (self.user()) {
+        self.user().fetch(); // Refreshes the current user
+    }
 
     self.code_mirror = CodeMirror.fromTextArea(document.getElementById('code-input'), {
         value: "function() {\nreturn LEFT;\n}\n",
         mode: "javascript",
         lineNumbers: true,
         gutters: ["CodeMirror-lint-markers"],
-        lint: true
+        lint: true,
+        autoCloseBrackets: true,
+        matchBrackets: true,
+        highlightSelectionMatches: {showToken: /\w/},
+        viewportMargin: Infinity
     });
+
     self.code_mirror.setSize('100%', ($(document).height() - 140).toString() + 'px');
-    self.code_mirror.setValue("function() {\n\treturn LEFT; // or RIGHT, UP, DOWN\n}\n");
+    self.code_mirror.setValue("function yourScript() {\n\t// Put everything in this function (inner functions allowed)" +
+        "\n\t// Do not put anything outside this function" +
+        "\n\t// Be sure to press Set Script each time you want to apply your changes" +
+        "\n\treturn LEFT; // or RIGHT, UP, DOWN\n}\n\n");
+
+    self.code_mirror.on("change", function (cm, change) {
+        if (change.origin !== 'setValue') {
+            self.showSetScriptAlert(true);
+        }
+    });
+
+    function validateCode(code) {
+        // TODO: Actually validate
+        return true;
+    }
 
     self.setCode = function () {
-        localStorage.setItem('code', self.code_mirror.getValue());
-        self.game().setCode(self.code_mirror.getValue());
+        self.showSetScriptAlert(false);
+        var code = self.code_mirror.getValue();
+        if (!validateCode(code)) {
+            // TODO: Warn the user
+            return;
+        }
+
+        localStorage.setItem('code', code);
+        self.game().setCode(code);
 
         if (!Parse.User.current()) {
             self.showLoginAlert(true);
@@ -218,7 +272,6 @@ function SingleGameViewModel(canvas) {
     }
 
     function loop() {
-        self.game().gameLoop();
         if (self.game().over()) {
             self.timer = clearTimeout(self.timer);
             if (self.game().score() > 0) {
@@ -232,7 +285,10 @@ function SingleGameViewModel(canvas) {
                     }
 
                     var currentUsersHighScore = user.get("highScore");
-                    if (!currentUsersHighScore || self.game().score() > currentUsersHighScore) {
+                    if (currentUsersHighScore === undefined || currentUsersHighScore === null) {
+                        currentUsersHighScore = 0;
+                    }
+                    if (self.game().score() > currentUsersHighScore) {
                         compareAllTimeHighScore(self.game().score());
                         user.set("highScore", self.game().score());
                         user.set("eaten", self.game().eaten());
@@ -256,16 +312,20 @@ function SingleGameViewModel(canvas) {
             }
             return;
         }
-        self.timer = setTimeout(function () {
-            requestAnimationFrame(loop);
-        }, 1000 / self.speed());
+        self.timer = setTimeout(loop, 1000);
     }
+
+    function render() {
+        requestAnimationFrame(render);
+        self.game().drawGame();
+    }
+    requestAnimationFrame(render);
 
     self.start = function() {
         self.game().start();
         if (!self.timer) {
             self.timer = setTimeout(function() {
-                requestAnimationFrame(loop);
+                loop();
             }, 0);
         }
     };
@@ -292,9 +352,19 @@ function SingleGameViewModel(canvas) {
             success: function (user) {
                 var highScore = user.get("highScore");
                 if (score > highScore) {
-                    // TODO: Alert the user they have set the new all time high score
+                    $.pnotify({
+                        type: 'success',
+                        title: 'Congratulations!',
+                        text: 'You set the new all-time high score!'
+                    });
+                    console.log('Set a new all-time high score.');
                 } else {
-                    // TODO: Alert the user of a new personal best
+                    $.pnotify({
+                        type: 'success',
+                        title: 'Congratulations!',
+                        text: 'You set a new personal-best high score!'
+                    });
+                    console.log('Set a new personal-best high score.');
                 }
             }
         });
