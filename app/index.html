@@ -1,0 +1,158 @@
+<html>
+<head>
+    <title>Battleship Scripting Challenge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/vendor/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="static/css/main.css"/>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src="static/vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="static/vendor/knockout-2.2.1.js"></script>
+
+    <!-- CodeMirror and addons -->
+    <link rel="stylesheet" href="static/vendor/codemirror-3.14/lib/codemirror.css">
+    <link rel="stylesheet" href="static/vendor/codemirror-3.14/addon/lint/lint.css">
+
+    <script src="static/vendor/codemirror-3.14/lib/codemirror.js"></script>
+    <script src="static/vendor/codemirror-3.14/mode/javascript/javascript.js"></script>
+    <script src="static/vendor/codemirror-3.14/addon/hint/javascript-hint.js"></script>
+    <script src="static/vendor/jshint/jshint-2.1.4.js"></script>
+    <script src="static/vendor/codemirror-3.14/addon/lint/lint.js"></script>
+    <script src="static/vendor/codemirror-3.14/addon/lint/javascript-lint.js"></script>
+    <script src="static/vendor/codemirror-3.14/addon/edit/closebrackets.js"></script>
+    <script src="static/vendor/codemirror-3.14/addon/edit/matchbrackets.js"></script>
+    <script src="static/vendor/codemirror-3.14/addon/search/match-highlighter.js"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/ui/live/0.5/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/live/0.5/firebase-ui-auth.css" />
+
+    <!-- Pines Notify -->
+    <!--<link rel="stylesheet" href="/static/pnotify-1.2.0/jquery.pnotify.default.css">-->
+    <!--<script src="/static/pnotify-1.2.0/jquery.pnotify.min.js"></script>-->
+
+    <!-- App JS -->
+    <script src="static/js/BattleshipChallenge.js"></script>
+    <script src="static/js/GameCanvas.js"></script>
+</head>
+<body id="singleplayer">
+    <div id="firebaseui-auth-container" style="display: none;" data-bind="visible: !user()"></div>
+    <div class="navbar">
+        <div class="navbar-inner">
+            <a class="brand active" href="/">Battleship Scripting Challenge</a>
+            <ul class="nav">
+                <li><a href="documentation.html">Documentation</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="multiplayer.html">Multiplayer</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="left">
+        <canvas id="board" width="320" height="320"></canvas>
+        <div class="btn-toolbar">
+            <button class="btn btn-primary" data-bind="click: $root.start.bind($root)">Start</button>
+            <div class="btn-group">
+                <button class="btn dropdown-toggle" data-toggle="dropdown">Options
+                    <span class="caret"></span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <label>Game Speed: <span data-bind="text: speed"></span></label>
+                        <input class="fps-control" type="range" min="1" max="1000" data-bind="value: speed">
+                    </li>
+                    <li class="divider"></li>
+                    <li>
+                        <div class="input-append">
+                            <input class="moves-to-skip" type="number" data-bind="value: movesToSkip" onclick="event.stopPropagation();">
+                            <button class="btn" data-bind="click: $root.skipMoves.bind($root)">Skip Moves</button>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <button class="btn" data-bind="click: $root.setCode.bind($root)">Set Script</button>
+        </div>
+        <div class="progress" data-bind="visible: showSkipProgress">
+            <div class="bar" data-bind="style: { width: skipProgress() + '%' }"></div>
+        </div>
+        <table class="table table-striped table-condensed table-bordered" data-bind="with: game">
+            <tbody>
+            <tr>
+                <td>Board Size</td>
+                <td class="text-right">
+                    <span data-bind="text: boardWidth"></span> x <span data-bind="text: boardHeight"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>Moves</td>
+                <td class="text-right">
+                    <span data-bind="text: moves().length"></span>
+                </td>
+            </tr>
+            <tr>
+                <td>Hits</td>
+                <td class="text-right">
+                    <span data-bind="text: hits"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="right">
+        <div class="code-header">
+            <h4>Your script</h4>
+            <span class="pull-right">Check out the <a href="documentation.html" target="_blank">API Documentation</a> to get started!</span>
+        </div>
+        <div class="alert" data-bind="visible: showSetScriptAlert">
+            <button type="button" class="close" data-dismiss="alert">x</button>
+            <strong>Warning!</strong> Your script has changed. Make sure you click the Set Script button to apply changes.
+        </div>
+        <textarea class="code-input" id="code-input" rows="25"></textarea>
+    </div>
+
+    <script>
+        // Initialize Firebase
+        var config = {
+            apiKey: "AIzaSyBfiCX5xXdwzTNZmW3mYY1O1vUhn3W9rcg",
+            authDomain: "battleship-challenge-8bd36.firebaseapp.com",
+            databaseURL: "https://battleship-challenge-8bd36.firebaseio.com",
+            storageBucket: "battleship-challenge-8bd36.appspot.com",
+            messagingSenderId: "1023172428726"
+        };
+        firebase.initializeApp(config);
+
+        // FirebaseUI config.
+        var uiConfig = {
+            'signInOptions': [
+                firebase.auth.GoogleAuthProvider.PROVIDER_ID
+            ],
+            'signInFlow': 'popup'
+        };
+
+        // Initialize the FirebaseUI Widget using Firebase.
+        var ui = new firebaseui.auth.AuthUI(firebase.auth());
+        // The start method will wait until the DOM is loaded.
+        ui.start('#firebaseui-auth-container', uiConfig);
+    </script>
+    <script>
+        $(function() {
+            var canvas = document.getElementById("board");
+            var battleshipChallenge = new BattleshipChallengeViewModel(canvas);
+            battleshipChallenge.initialize();
+            ko.applyBindings(battleshipChallenge);
+
+            firebase.auth().onAuthStateChanged(function (user) {
+                if(user) {
+                    battleshipChallenge.user(user);
+                }
+                else {
+                    battleshipChallenge.showSignIn(true);
+                }
+            }, function (error) {
+                console.log(error);
+            });
+        });
+    </script>
+</body>
+</html>
