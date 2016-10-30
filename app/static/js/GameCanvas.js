@@ -24,6 +24,13 @@ function GameCanvasViewModel(canvas) {
         self.context.stroke();
     };
 
+    self.drawRect = function(x, y, width, height, fillColor) {
+        self.context.beginPath();
+        self.context.fillStyle = fillColor;
+        self.context.fillRect(x, y, width, height);
+        self.context.stroke();
+    };
+
     self.drawMessage = function(message) {
         if (message !== undefined) {
             self.context.fillStyle = '#00F';

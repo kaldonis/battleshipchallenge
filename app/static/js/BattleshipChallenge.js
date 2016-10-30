@@ -142,8 +142,8 @@ function BattleshipChallengeViewModel(canvas) {
 function BattleshipGameViewModel(canvas) {
     var self = this;
 
-    self.boardWidth = 10;
-    self.boardHeight = 10;
+    self.boardWidth = 40;
+    self.boardHeight = 40;
     self.gameCanvas = new GameCanvasViewModel(canvas);
     self.gridSquareSize = self.gameCanvas.canvas.width / self.boardWidth;
     self.board = [];
@@ -198,14 +198,7 @@ function BattleshipGameViewModel(canvas) {
 
     self.animateChange = function(tile) {
         if(tile.type == SHIP) {
-            if (tile.ship.isDestroyed()) {
-                tile.ship.parts.forEach(function(part) {
-                    self.drawGridDot(part.x, part.y, 'black', '#F6F6F6')
-                });
-            }
-            else {
-                self.drawGridDot(tile.x, tile.y, 'red', '#F6F6F6')
-            }
+            self.drawGridDot(tile.x, tile.y, 'red', '#F6F6F6')
         }
         else if(tile.type == WATER) {
             self.drawGridDot(tile.x, tile.y, 'white', '#F6F6F6')
@@ -284,12 +277,23 @@ function BattleshipGameViewModel(canvas) {
                     ship.parts.forEach(function(part) {
                         self.board[part.y][part.x] = part;
                     });
+                    self.drawShip(ship);
                     break;
                 }
             }
             while (true);
         }
-        debugger;
+    };
+
+    self.drawShip = function(ship) {
+        ship.parts.forEach(function(part) {
+            var gridX = part.x;
+            var gridY = part.y;
+
+            var x = gridX * self.gridSquareSize;
+            var y = gridY * self.gridSquareSize;
+            self.gameCanvas.drawRect(x, y, self.gridSquareSize, self.gridSquareSize, '#666666');
+        });
     };
 
     self.populateBoard = function() {
