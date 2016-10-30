@@ -22,5 +22,20 @@ function GameCanvasViewModel(canvas) {
         self.context.lineWidth = 1;
         self.context.strokeStyle = borderColor;
         self.context.stroke();
-    }
+    };
+
+    self.drawMessage = function(message) {
+        if (message !== undefined) {
+            self.context.fillStyle = '#00F';
+            self.context.strokeStyle = '#FFF';
+            self.context.font = (self.canvas.height / 10) + 'px Impact';
+            self.context.textAlign = 'center';
+            self.context.fillText(message, self.canvas.width / 2, self.canvas.height / 2);
+            self.context.strokeText(message, self.canvas.width / 2, self.canvas.height / 2);
+        }
+    };
+
+    self.clear = function() {
+        self.context.clearRect(0, 0, self.canvas.width, self.canvas.height);
+    };
 }
