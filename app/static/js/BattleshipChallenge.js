@@ -142,8 +142,8 @@ function BattleshipChallengeViewModel(canvas) {
 function BattleshipGameViewModel(canvas) {
     var self = this;
 
-    self.boardWidth = 40;
-    self.boardHeight = 40;
+    self.boardWidth = 10;
+    self.boardHeight = 10;
     self.gameCanvas = new GameCanvasViewModel(canvas);
     self.gridSquareSize = self.gameCanvas.canvas.width / self.boardWidth;
     self.board = [];
@@ -156,6 +156,8 @@ function BattleshipGameViewModel(canvas) {
     };
 
     self.start = function() {
+        self.moves([]);
+        self.hits(0);
         self.gameCanvas.clear();
         self.populateBoard();
         self.drawGrid();
@@ -366,10 +368,41 @@ function BattleshipGameViewModel(canvas) {
         return [false, false];
     };
 
+    self.getBoard = function() {
+        var board = [];
+        for(var x=0; x<self.boardHeight; x++) {
+            board.push([]);
+            for(var y=0; y<self.boardWidth; y++) {
+                var target = self.board[y][x];
+                board[x].push({
+                    state: !target.hit() ? 'hidden' : target.type == WATER ? 'miss' : target.ship.isDestroyed() ? 'sunk' : 'hit',
+                    isHidden: !target.hit(),
+                    isMiss: target.hit() && target.type == WATER,
+                    isHit: target.hit() && target.type == SHIP,
+                    isSunk: target.hit() && target.type == SHIP ? target.ship.isDestroyed() : false
+                })
+            }
+        }
+        return board;
+    };
+
+    self.getShips = function() {
+        var ships = [];
+        self.ships.forEach(function(ship) {
+            ships.push({
+                size: ship.size,
+                isSunk: ship.isDestroyed()
+            });
+        });
+    };
+
     self.sandbox = new BattleshipGameSandbox({
         getBoardWidth: function() { return self.boardWidth; },
         getBoardHeight: function() { return self.boardHeight; },
-        getNumMoves: function() { return self.moves().length; }
+        getMoves: function() { return self.moves() },
+        getBoard: self.getBoard,
+        getShips: self.getShips
+
     });
 
     self.getMove = function(lastResult) {
@@ -387,9 +420,11 @@ function BattleshipGameViewModel(canvas) {
 function BattleshipGameSandbox(api) {
     var self = this;
 
-    self.api = api;
-    self.getMove = function(lastResult) {};
+    $.each(api, function(key, value) {
+        self[key] = value;
+    });
 
+    self.getMove = function(lastResult) {};
     self.setGetMoveFunction = function(code) {
         return eval('self.getMove = ' + code + ';');
     };
