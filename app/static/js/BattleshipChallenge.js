@@ -10,6 +10,9 @@ function BattleshipChallengeViewModel(canvas) {
     self.over = ko.observable(true);
 
     self.speed = ko.observable(10);
+    self.speed.subscribe(function() {
+        self.setIntervalTimer();
+    });
     self.movesToSkip = ko.observable(5000);
     self.skipProgress = ko.observable(0);
     self.showSkipProgress = ko.observable(false);
@@ -19,7 +22,7 @@ function BattleshipChallengeViewModel(canvas) {
     self.lastResult = null;
 
     self.codeMirror = CodeMirror.fromTextArea(document.getElementById('code-input'), {
-        value: "function(hit, sunk) {\nreturn [0, 0];\n}\n",
+        value: "function() {\nreturn [0, 0];\n}\n",
         mode: "javascript",
         lineNumbers: true,
         gutters: ["CodeMirror-lint-markers"],
@@ -31,7 +34,7 @@ function BattleshipChallengeViewModel(canvas) {
     });
 
     self.codeMirror.setSize('100%', ($(document).height() - 140).toString() + 'px');
-    self.codeMirror.setValue("function yourScript(hit, sunk) {\n  // Put everything in this function (inner functions allowed)" +
+    self.codeMirror.setValue("function yourScript() {\n  // Put everything in this function (inner functions allowed)" +
         "\n  // Do not put anything outside this function" +
         "\n  // Be sure to press Set Script each time you want to apply your changes" +
         "\n  return [0, 0]; \n}\n\n");
@@ -41,10 +44,6 @@ function BattleshipChallengeViewModel(canvas) {
             self.showSetScriptAlert(true);
         }
     });
-
-    self.skipMoves = function() {
-
-    };
 
     self.getMove = function(lastResult) {
         return self.game.getMove(lastResult);
@@ -343,15 +342,17 @@ function BattleshipGameViewModel(canvas) {
     self.doMove = function(move) {
         var x = move[0];
         var y = move[1];
+        self.moves.push([x, y]);
+        console.log("["+ x +", "+ y +"]");
         var target = self.board[y][x];
         if(!target) {
-            throw "Invalid target!";
+            console.log("Invalid move.");
+            return;
         }
         if(target.hit()) {
-            throw "Target already hit!"
+            console.log("Already hit.");
+            return;
         }
-        console.log("["+ x +", "+ y +"]");
-        self.moves.push([x, y]);
         target.hit(true);
         if(target.type == SHIP) {
             console.log('HIT');
@@ -365,7 +366,6 @@ function BattleshipGameViewModel(canvas) {
         else {
             console.log('MISS');
         }
-        return [false, false];
     };
 
     self.getBoard = function() {

@@ -60,14 +60,7 @@
                 <ul class="dropdown-menu">
                     <li>
                         <label>Game Speed: <span data-bind="text: speed"></span></label>
-                        <input class="fps-control" type="range" min="1" max="1000" data-bind="value: speed">
-                    </li>
-                    <li class="divider"></li>
-                    <li>
-                        <div class="input-append">
-                            <input class="moves-to-skip" type="number" data-bind="value: movesToSkip" onclick="event.stopPropagation();">
-                            <button class="btn" data-bind="click: $root.skipMoves.bind($root)">Skip Moves</button>
-                        </div>
+                        <input class="fps-control" type="range" min="1" max="100" data-bind="value: speed">
                     </li>
                 </ul>
             </div>
