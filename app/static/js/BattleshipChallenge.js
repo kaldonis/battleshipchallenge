@@ -5,6 +5,7 @@ function BattleshipChallengeViewModel(canvas) {
     var self = this;
 
     self.game = new BattleshipGameViewModel(canvas);
+    self.database = null;
     self.user = ko.observable();
     self.code = null;
     self.over = ko.observable(true);
@@ -17,6 +18,7 @@ function BattleshipChallengeViewModel(canvas) {
     self.skipProgress = ko.observable(0);
     self.showSkipProgress = ko.observable(false);
     self.showSetScriptAlert = ko.observable(false);
+    self.showLoginAlert = ko.observable(false);
     self.showSignIn = ko.observable(false);
 
     self.lastResult = null;
@@ -45,19 +47,23 @@ function BattleshipChallengeViewModel(canvas) {
         }
     });
 
-    self.getMove = function(lastResult) {
-        return self.game.getMove(lastResult);
+    self.getMove = function() {
+        return self.game.getMove();
     };
 
     self.setCode = function () {
         self.showSetScriptAlert(false);
         var code = self.codeMirror.getValue();
-        localStorage.setItem('code', code);
 
         if (!self.user()) {
+            localStorage.setItem('code', code);
             self.showLoginAlert(true);
         } else {
-            // save script to firebase
+            self.database.ref('users/' + self.user().uid).update({
+                email: self.user().email,
+                displayName: self.user().displayName,
+                script: code
+            });
         }
 
         // This allows the user to provide a generic javascript function, without worrying what function to override.
@@ -75,28 +81,40 @@ function BattleshipChallengeViewModel(canvas) {
         }
     };
 
+    self.updateHighScore = function(score) {
+        if(self.user()) {
+            self.database.ref('users/' + self.user().uid).once('value').then(function(snapshot) {
+                var value = snapshot.val();
+                var shouldUpdate = true;
+                if(value) {
+                    if(value.highScore && value.highScore > score) {
+                        shouldUpdate = false;
+                    }
+                }
+                if (shouldUpdate) {
+                    self.database.ref('users/' + self.user().uid).update({
+                        highScore: score,
+                        sortableHighScore: 0 - score
+                    });
+                }
+            })
+        }
+    };
+
     self.gameLoop = function () {
         if (self.over() == false) {
             var gameState = backupGameState();
             try {  // Wrapped in try-catch since getMove is user code
-                var move = self.getMove(self.lastResult);
+                var move = self.getMove();
             } finally {
                 restoreGameState(gameState);
             }
 
-            try {
-                var result = self.game.doMove(move);
-            }
-            catch (e) {
-                alert(e + ' - Aborting game.');
-                console.error(e.stack);
+            var result = self.game.doMove(move);
+            if (result == 'END') {  // so hacky
                 self.over(true);
-                self.game.gameOver();
+                self.updateHighScore(self.game.score());
             }
-            if (result == 'END') {
-                self.over(true);  // so hacky
-            }
-            self.lastResult = result;
         }
     };
 
@@ -125,16 +143,27 @@ function BattleshipChallengeViewModel(canvas) {
         }
     };
 
+    self.updateCode = function(code) {
+        self.code = code;
+        self.codeMirror.setValue(code);
+        self.game.setGetMoveFunction(code);
+    };
+
     self.initialize = function() {
         self.game.initialize();
 
-        if (localStorage.getItem('code')) {
-            var code = localStorage.getItem('code');
-            self.code = code;
-            self.codeMirror.setValue(code);
-            self.game.setGetMoveFunction(code);
+        if (self.user()) {
+            self.database.ref('users/' + self.user().uid).once('value').then(function (snapshot) {
+                var value = snapshot.val();
+                if (value.script) {
+                    self.updateCode(value.script);
+                }
+            });
         }
-    }
+        else if (localStorage.getItem('code')) {
+            self.updateCode(localStorage.getItem('code'));
+        }
+    };
 }
 
 
@@ -149,6 +178,9 @@ function BattleshipGameViewModel(canvas) {
     self.ships = [];
     self.moves = ko.observableArray([]);
     self.hits = ko.observable(0);
+    self.score = ko.computed(function() {
+        return self.moves().length == 0 ? 0 : parseInt(self.hits() / self.moves().length * 1000);
+    });
 
     self.initialize = function() {
         self.gameCanvas.drawMessage('PRESS START');
@@ -167,7 +199,7 @@ function BattleshipGameViewModel(canvas) {
     };
 
     self.gameWon = function() {
-        self.gameCanvas.drawMessage('WINNER!');
+        self.gameCanvas.drawMessage('SCORE: ' + self.score());
     };
 
     self.getState = function() {
@@ -405,10 +437,8 @@ function BattleshipGameViewModel(canvas) {
 
     });
 
-    self.getMove = function(lastResult) {
-        var hit = lastResult ? lastResult[0] : false;
-        var sunk = lastResult ? lastResult[1] : false;
-        return self.sandbox.getMove(hit, sunk);
+    self.getMove = function() {
+        return self.sandbox.getMove();
     };
 
     self.setGetMoveFunction = function(code) {
@@ -424,7 +454,7 @@ function BattleshipGameSandbox(api) {
         self[key] = value;
     });
 
-    self.getMove = function(lastResult) {};
+    self.getMove = function() {};
     self.setGetMoveFunction = function(code) {
         return eval('self.getMove = ' + code + ';');
     };

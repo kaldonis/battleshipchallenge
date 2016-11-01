@@ -1,55 +1,37 @@
 <html>
 <head>
-    <title>Snake Scripting Challenge - Multiplayer</title>
+    <title>Battleship Scripting Challenge</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="/static/bootstrap/css/bootstrap.css" rel="stylesheet">
-    <link href="/static/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="/static/css/main.css"/>
+    <link href="static/vendor/bootstrap/css/bootstrap.css" rel="stylesheet">
+    <link href="static/vendor/bootstrap/css/bootstrap-responsive.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="static/css/main.css"/>
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
-    <script src="/static/bootstrap/js/bootstrap.min.js"></script>
-    <script src="http://www.parsecdn.com/js/parse-1.2.8.min.js"></script>
-    <script src="/static/js/knockout-2.2.1.js"></script>
-    <script type="text/javascript" src="/static/js/common.js"></script>
-    <script type="text/javascript" src="/static/js/user.js"></script>
-    <script type="text/javascript" src="/static/js/game.js"></script>
-    <script type="text/javascript" src="/static/js/multi.js"></script>
+    <script src="static/vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="static/vendor/knockout-2.2.1.js"></script>
+    <script src="static/vendor/knockout.simpleGrid.1.3.js"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/3.5.2/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/ui/live/0.5/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/live/0.5/firebase-ui-auth.css" />
+
+    <script src="static/js/BattleshipMultiplayer.js"></script>
+    <script src="static/js/BattleshipChallenge.js"></script>
+    <script src="static/js/GameCanvas.js"></script>
 </head>
 <body id="multiplayer">
-<div id="fb-root"></div>
-<script>
-    window.fbAsyncInit = function () {
-        Parse.FacebookUtils.init({
-            appId: '550911944955409', // Facebook App ID
-            channelUrl: '//snake-challenge.parseapp.com/channel.html', // Channel File
-            cookie: true, // enable cookies to allow Parse to access the session
-            xfbml: true  // parse XFBML
-        });
-    };
-
-    // Load the SDK asynchronously
-    (function (d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) {
-            return;
-        }
-        js = d.createElement(s);
-        js.id = id;
-        js.src = "//connect.facebook.net/en_US/all.js";
-        fjs.parentNode.insertBefore(js, fjs);
-    }(document, 'script', 'facebook-jssdk'));
-</script>
 <div class="container-fluid">
+    <div id="firebaseui-auth-container" style="display: none;" data-bind="visible: !user()"></div>
     <div class="navbar">
         <div class="navbar-inner">
-            <a class="brand active" href="/">Snake Scripting Challenge</a>
+            <a class="brand active" href="/">Battleship Scripting Challenge</a>
             <ul class="nav">
-                <li><a href="/documentation.html">Documentation</a></li>
-                <li><a href="/leaderboard.html">Leaderboard</a></li>
-                <li class="active"><a href="/multiplayer.html">Multiplayer</a></li>
-            </ul>
-            <ul class="nav pull-right">
-                <li><a href="#" data-bind="click: $root.login.bind($root), visible: !user()">Login</a></li>
-                <li><a href="#" data-bind="click: $root.logout.bind($root), visible: user">Logout</a></li>
+                <li><a href="documentation.html">Documentation</a></li>
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+                <li><a href="multiplayer.html">Multiplayer</a></li>
             </ul>
         </div>
     </div>
@@ -64,37 +46,61 @@
                     <ul class="dropdown-menu">
                         <li>
                             <label>Game Speed: <span data-bind="text: speed"></span></label>
-                            <input class="fps-control" type="range" min="1" max="1000" data-bind="value: speed">
-                        </li>
-                        <li class="divider"></li>
-                        <li>
-                            <div class="input-append">
-                                <input class="moves-to-skip" type="number" data-bind="value: movesToSkip"
-                                       onclick="event.stopPropagation();">
-                                <button class="btn" data-bind="click: $root.skipMoves.bind($root)">Skip Moves
-                                </button>
-                            </div>
+                            <input class="fps-control" type="range" min="1" max="100" data-bind="value: speed">
                         </li>
                     </ul>
                 </div>
             </div>
-            <div class="progress" data-bind="visible: showSkipProgress">
-                <div class="bar" data-bind="style: { width: skipProgress() + '%' }"></div>
-            </div>
-            <ul id="game-boards" data-bind="foreach: users, fadeVisible: showGameBoards">
+            <ul id="game-boards" data-bind="foreach: users, fadeVisible: user">
                 <li>
                     <h2 data-bind="text: name"></h2>
                     <div>Score: <span data-bind="text: score"></span></div>
-                    <canvas data-bind="attr: { id: board_id }" width="320" height="240"></canvas>
-                    <div data-bind="text: init()"></div> <!-- Hack to run the init() function after the canvas exists -->
+                    <canvas data-bind="attr: { id: boardId }" width="320" height="320"></canvas>
+                    <div data-bind="text: initialize()"></div> <!-- Hack to run the init() function after the canvas exists -->
                 </li>
             </ul>
         </div>
     </div>
 </div>
+<script>
+    // Initialize Firebase
+    var config = {
+        apiKey: "AIzaSyBfiCX5xXdwzTNZmW3mYY1O1vUhn3W9rcg",
+        authDomain: "battleship-challenge-8bd36.firebaseapp.com",
+        databaseURL: "https://battleship-challenge-8bd36.firebaseio.com",
+        storageBucket: "battleship-challenge-8bd36.appspot.com",
+        messagingSenderId: "1023172428726"
+    };
+    firebase.initializeApp(config);
+
+    // FirebaseUI config.
+    var uiConfig = {
+        'signInOptions': [
+            firebase.auth.GoogleAuthProvider.PROVIDER_ID
+        ],
+        'signInFlow': 'popup'
+    };
+
+    // Initialize the FirebaseUI Widget using Firebase.
+    var ui = new firebaseui.auth.AuthUI(firebase.auth());
+    // The start method will wait until the DOM is loaded.
+    ui.start('#firebaseui-auth-container', uiConfig);
+</script>
 </body>
 <script>
-    Parse.initialize("rwqT1Ag7cow4gldZchA3Gr5s3TnDCdmZnxSGAjqP", "MY0rT3SUsR52DnrPHM8vz2YPxq9ZBxuRhaeCQqHe");
-    ko.applyBindings(new MultiGameViewModel());
+    $(function() {
+        var multiplayerViewModel = new BattleshipMultiplayerViewModel();
+        ko.applyBindings(multiplayerViewModel);
+
+        firebase.auth().onAuthStateChanged(function (user) {
+            if (user) {
+                multiplayerViewModel.user(user);
+                multiplayerViewModel.database = firebase.database();
+                multiplayerViewModel.initialize();
+            }
+        }, function (error) {
+            console.log(error);
+        });
+    });
 </script>
 </html>
