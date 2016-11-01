@@ -31,7 +31,7 @@ function yourScript() {
 }
             </pre>
             <p>Keep all code in a <strong>single function</strong> (inner functions are allowed).</p>
-            <p>If your code returns an invalid move (like a coordinate already hit, or one outside the board) it will count against your total moves but otherwise be ignored.</p>
+            <p>If your code returns an invalid move (like a coordinate already hit, or one outside the board) it will end the game.</p>
             <p>You have access to the <code>self</code> variable to save state between moves if you wish, as well as access to game state.</p>
             <p>Logging is available through <code>console.log(message)</code>. You can also use <code>console.error(message)</code>, <code>console.warn(message)</code>, and <code>console.debug(message)</code>.</p>
             <p>All built-in game state variables are backed up prior, and restored after, your function runs. This prevents tampering.</p>

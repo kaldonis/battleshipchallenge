@@ -179,8 +179,9 @@ function BattleshipGameViewModel(canvas) {
     self.moves = ko.observableArray([]);
     self.hits = ko.observable(0);
     self.score = ko.computed(function() {
-        return self.moves().length == 0 ? 0 : parseInt(self.hits() / self.moves().length * 1000);
+        return self.moves().length == 0 ? 0 : parseInt(self.hits() * 10 - self.moves().length);
     });
+    self.code = null;
 
     self.initialize = function() {
         self.gameCanvas.drawMessage('PRESS START');
@@ -192,13 +193,17 @@ function BattleshipGameViewModel(canvas) {
         self.gameCanvas.clear();
         self.populateBoard();
         self.drawGrid();
+        self.sandbox = new BattleshipGameSandbox({
+            getBoardWidth: function() { return self.boardWidth; },
+            getBoardHeight: function() { return self.boardHeight; },
+            getMoves: function() { return self.moves() },
+            getBoard: self.getBoard,
+            getShips: self.getShips
+        });
+        self.setGetMoveFunction(self.code);
     };
 
     self.gameOver = function() {
-        self.gameCanvas.drawMessage('GAME OVER');
-    };
-
-    self.gameWon = function() {
         self.gameCanvas.drawMessage('SCORE: ' + self.score());
     };
 
@@ -374,26 +379,27 @@ function BattleshipGameViewModel(canvas) {
     self.doMove = function(move) {
         var x = move[0];
         var y = move[1];
-        self.moves.push([x, y]);
         console.log("["+ x +", "+ y +"]");
         var target = self.board[y][x];
         if(!target) {
-            console.log("Invalid move.");
-            return;
+            console.log("Invalid move - game over.");
+            self.gameOver();
+            return 'END';
         }
         if(target.hit()) {
-            console.log("Already hit.");
-            return;
+            console.log("Already hit - game over.");
+            self.gameOver();
+            return 'END';
         }
+        self.moves.push([x, y]);
         target.hit(true);
         if(target.type == SHIP) {
             console.log('HIT');
             self.hits(self.hits() + 1);
             if (self.checkIfDone()) {
-                self.gameWon();
+                self.gameOver();
                 return 'END';
             }
-            return [true, target.ship.isDestroyed()];
         }
         else {
             console.log('MISS');
@@ -434,7 +440,6 @@ function BattleshipGameViewModel(canvas) {
         getMoves: function() { return self.moves() },
         getBoard: self.getBoard,
         getShips: self.getShips
-
     });
 
     self.getMove = function() {
@@ -442,6 +447,7 @@ function BattleshipGameViewModel(canvas) {
     };
 
     self.setGetMoveFunction = function(code) {
+        self.code = code;
         return self.sandbox.setGetMoveFunction(code);
     };
 }

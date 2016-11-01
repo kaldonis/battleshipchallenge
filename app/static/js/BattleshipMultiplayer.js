@@ -6,8 +6,16 @@ function BattleshipMultiplayerViewModel() {
     self.users = ko.observableArray([]);
 
     self.speed = ko.observable(10);
+    self.speed.subscribe(function() {
+        if(!self.gameOver()) {
+            self.setIntervalTimer();
+        }
+    });
+
+    self.gameOver = ko.observable(true);
 
     self.start = function() {
+        self.gameOver(false);
         ko.utils.arrayForEach(self.users(), function(user) {
             user.start();
         });
@@ -23,8 +31,10 @@ function BattleshipMultiplayerViewModel() {
     };
 
     self.gameLoop = function() {
+        var gameOver = true;
         self.users().forEach(function(user) {
             if (user.gameOver() == false) {
+                gameOver = false;
                 try {
                     var move = user.game().getMove();
                 }
@@ -34,6 +44,7 @@ function BattleshipMultiplayerViewModel() {
                 user.doMove(move);
             }
         });
+        self.gameOver(gameOver);
 
         self.sortByScore();
     };
