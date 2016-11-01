@@ -12,14 +12,23 @@ function BattleshipMultiplayerViewModel() {
         }
     });
 
+    self.ships = [];
     self.gameOver = ko.observable(true);
 
     self.start = function() {
-        self.gameOver(false);
-        ko.utils.arrayForEach(self.users(), function(user) {
-            user.start();
-        });
-        self.setIntervalTimer();
+        if(self.users().length > 0) {
+            // start first game so we can steal its ship locations
+            var firstUser = self.users()[0];
+            firstUser.start();
+            var ships = firstUser.game().ships;
+            debugger;
+
+            ko.utils.arrayForEach(self.users(), function (user) {
+                user.start(ships);
+            });
+            self.gameOver(false);
+            self.setIntervalTimer();
+        }
     };
 
     self.setIntervalTimer = function() {
@@ -130,8 +139,8 @@ function BattleshipMultiplayerUserViewModel(user, index) {
     self.initialized = false;
     self.gameOver = ko.observable(true);
 
-    self.start = function() {
-        self.game().start();
+    self.start = function(ships) {
+        self.game().start(ships);
         self.gameOver(false);
     };
 

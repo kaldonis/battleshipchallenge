@@ -187,11 +187,11 @@ function BattleshipGameViewModel(canvas) {
         self.gameCanvas.drawMessage('PRESS START');
     };
 
-    self.start = function() {
+    self.start = function(ships) {
         self.moves([]);
         self.hits(0);
         self.gameCanvas.clear();
-        self.populateBoard();
+        self.populateBoard(ships);
         self.drawGrid();
         self.sandbox = new BattleshipGameSandbox({
             getBoardWidth: function() { return self.boardWidth; },
@@ -243,7 +243,16 @@ function BattleshipGameViewModel(canvas) {
         }
     };
 
-    self.placeShips = function() {
+    self.placeShip = function(shipCoords) {
+        var ship = new Ship(shipCoords);
+        self.ships.push(ship);
+        ship.parts.forEach(function(part) {
+            self.board[part.y][part.x] = part;
+        });
+        self.drawShip(ship);
+    };
+
+    self.createAndPlaceShips = function() {
         var shipSizes = [2, 3, 3, 4, 5];
 
         for (var i=0; i<shipSizes.length; i++) {
@@ -309,13 +318,7 @@ function BattleshipGameViewModel(canvas) {
                 }
 
                 if (canPlace) {
-                    console.log('placing ship at ' + shipCoords + ' direction ' + direction);
-                    var ship = new Ship(shipCoords);
-                    self.ships.push(ship);
-                    ship.parts.forEach(function(part) {
-                        self.board[part.y][part.x] = part;
-                    });
-                    self.drawShip(ship);
+                    self.placeShip(shipCoords);
                     break;
                 }
             }
@@ -334,7 +337,9 @@ function BattleshipGameViewModel(canvas) {
         });
     };
 
-    self.populateBoard = function() {
+    self.populateBoard = function(ships) {
+        self.ships = [];
+
         // init board with all water
         for(var i=0; i<self.boardWidth; i++) {
             self.board[i] = [];
@@ -343,7 +348,15 @@ function BattleshipGameViewModel(canvas) {
             }
         }
 
-        self.placeShips();
+        if(ships && ships.length > 0) {
+            debugger;
+            ships.forEach(function(ship) {
+                self.placeShip(ship.locations);
+            });
+        }
+        else {
+            self.createAndPlaceShips();
+        }
 
         for(i=0; i<self.boardWidth; i++) {
             for(j=0; j<self.boardHeight; j++) {
@@ -394,6 +407,7 @@ function BattleshipGameViewModel(canvas) {
         self.moves.push([x, y]);
         target.hit(true);
         if(target.type == SHIP) {
+            debugger;
             console.log('HIT');
             self.hits(self.hits() + 1);
             if (self.checkIfDone()) {
@@ -470,6 +484,7 @@ function BattleshipGameSandbox(api) {
 function Ship(locations) {
     var self = this;
     self.size = locations.length;
+    self.locations = locations;
     self.parts = [];
 
     for(var i=0; i<self.size; i++) {
