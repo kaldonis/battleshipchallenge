@@ -21,7 +21,6 @@ function BattleshipMultiplayerViewModel() {
             var firstUser = self.users()[0];
             firstUser.start();
             var ships = firstUser.game().ships;
-            debugger;
 
             ko.utils.arrayForEach(self.users(), function (user) {
                 user.start(ships);
@@ -67,10 +66,12 @@ function BattleshipMultiplayerViewModel() {
     };
 
     self.initialize = function() {
-        self.database.ref('/users').on('child_added', function(snapshot) {
-            var user = snapshot.val();
-            var multiplayerUser = new BattleshipMultiplayerUserViewModel(user, self.users().length);
-            self.users.push(multiplayerUser);
+        self.database.ref('/users').once('value').then(function(snapshot) {
+            var users = snapshot.val();
+            $.each(users, function(uid, user) {
+                var multiplayerUser = new BattleshipMultiplayerUserViewModel(user, self.users().length);
+                self.users.push(multiplayerUser);
+            });
         });
 
         // Workaround for Webkit bug: force scroll height to be recomputed after the transition ends, not only when it starts

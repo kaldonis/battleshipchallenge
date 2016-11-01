@@ -179,7 +179,7 @@ function BattleshipGameViewModel(canvas) {
     self.moves = ko.observableArray([]);
     self.hits = ko.observable(0);
     self.score = ko.computed(function() {
-        return self.moves().length == 0 ? 0 : parseInt(self.hits() * 10 - self.moves().length);
+        return self.moves().length == 0 ? 0 : parseInt(self.hits() * 50 - (self.moves().length * 5));
     });
     self.code = null;
 
@@ -349,7 +349,6 @@ function BattleshipGameViewModel(canvas) {
         }
 
         if(ships && ships.length > 0) {
-            debugger;
             ships.forEach(function(ship) {
                 self.placeShip(ship.locations);
             });
@@ -407,7 +406,6 @@ function BattleshipGameViewModel(canvas) {
         self.moves.push([x, y]);
         target.hit(true);
         if(target.type == SHIP) {
-            debugger;
             console.log('HIT');
             self.hits(self.hits() + 1);
             if (self.checkIfDone()) {
