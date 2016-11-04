@@ -203,8 +203,12 @@ function BattleshipGameViewModel(canvas) {
         self.setGetMoveFunction(self.code);
     };
 
-    self.gameOver = function() {
+    self.gameWon = function() {
         self.gameCanvas.drawMessage('SCORE: ' + self.score());
+    };
+
+    self.gameOver = function() {
+        self.gameCanvas.drawMessage('GAME OVER');
     };
 
     self.getState = function() {
@@ -234,7 +238,7 @@ function BattleshipGameViewModel(canvas) {
         }
     };
 
-    self.animateChange = function(tile) {
+    self.animateTileHit = function(tile) {
         if(tile.type == SHIP) {
             self.drawGridDot(tile.x, tile.y, 'red', '#F6F6F6')
         }
@@ -362,7 +366,7 @@ function BattleshipGameViewModel(canvas) {
                 (function() {
                     var tile = self.board[i][j];
                     tile.hit.subscribe(function () {
-                        self.animateChange(tile);
+                        self.animateTileHit(tile);
                     });
                 })();
             }
@@ -395,12 +399,12 @@ function BattleshipGameViewModel(canvas) {
         var target = self.board[y][x];
         if(!target) {
             console.log("Invalid move - game over.");
-            self.gameOver();
+            self.gameWon();
             return 'END';
         }
         if(target.hit()) {
             console.log("Already hit - game over.");
-            self.gameOver();
+            self.gameWon();
             return 'END';
         }
         self.moves.push([x, y]);
@@ -409,7 +413,7 @@ function BattleshipGameViewModel(canvas) {
             console.log('HIT');
             self.hits(self.hits() + 1);
             if (self.checkIfDone()) {
-                self.gameOver();
+                self.gameWon();
                 return 'END';
             }
         }

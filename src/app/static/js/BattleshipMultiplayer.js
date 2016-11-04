@@ -11,19 +11,24 @@ function BattleshipMultiplayerViewModel() {
             self.setIntervalTimer();
         }
     });
+    self.numGames = ko.observable(5);
+    self.shipLayouts = [];
 
     self.ships = [];
     self.gameOver = ko.observable(true);
 
     self.start = function() {
+        self.shipLayouts = [];
         if(self.users().length > 0) {
-            // start first game so we can steal its ship locations
+            // generate as many ship layouts as we're gonna need
             var firstUser = self.users()[0];
-            firstUser.start();
-            var ships = firstUser.game().ships;
+            for(var i=0; i<self.numGames(); i++) {
+                firstUser.start();
+                self.shipLayouts.push(firstUser.game().ships);
+            }
 
             ko.utils.arrayForEach(self.users(), function (user) {
-                user.start(ships);
+                user.start(self.shipLayouts[0]);
             });
             self.gameOver(false);
             self.setIntervalTimer();
@@ -39,10 +44,10 @@ function BattleshipMultiplayerViewModel() {
     };
 
     self.gameLoop = function() {
-        var gameOver = true;
+        var allGamesOver = true;
         self.users().forEach(function(user) {
             if (user.gameOver() == false) {
-                gameOver = false;
+                allGamesOver = false;
                 try {
                     var move = user.game().getMove();
                 }
@@ -51,8 +56,17 @@ function BattleshipMultiplayerViewModel() {
                 }
                 user.doMove(move);
             }
+            else {
+                if (user.gameNumber() < self.numGames() - 1) {
+                    // start the next game
+                    allGamesOver = false;
+                    user.gameNumber(user.gameNumber() + 1);
+                    user.score(user.score() + user.currentGameScore());
+                    user.start(self.shipLayouts[user.gameNumber()]);
+                }
+            }
         });
-        self.gameOver(gameOver);
+        self.gameOver(allGamesOver);
 
         self.sortByScore();
     };
@@ -60,7 +74,7 @@ function BattleshipMultiplayerViewModel() {
     self.sortByScore = function() {
         $('#game-boards li').snapshotStyles();
         self.users.sort(function (a, b) {
-            return a.game().score() >= b.game().score() ? -1 : 1;
+            return a.totalScore() >= b.totalScore() ? -1 : 1;
         });
         $('#game-boards li').releaseSnapshot();
     };
@@ -127,6 +141,7 @@ function BattleshipMultiplayerViewModel() {
     };
 }
 
+
 function BattleshipMultiplayerUserViewModel(user, index) {
     var self = this;
 
@@ -134,9 +149,17 @@ function BattleshipMultiplayerUserViewModel(user, index) {
     self.boardId = ko.observable('board' + index);
     self.user = ko.observable(user);
     self.name = self.user().displayName;
-    self.score = ko.computed(function() {
+    self.gameNumber = ko.observable(0);
+
+    self.score = ko.observable(0);
+    self.currentGameScore = ko.computed(function() {
         return self.game() ? self.game().score() : 0;
     });
+
+    self.totalScore = ko.computed(function() {
+        return self.score() + self.currentGameScore();
+    });
+
     self.initialized = false;
     self.gameOver = ko.observable(true);
 

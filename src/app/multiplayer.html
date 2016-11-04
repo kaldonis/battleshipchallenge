@@ -48,13 +48,18 @@
                             <label>Game Speed: <span data-bind="text: speed"></span></label>
                             <input class="fps-control" type="range" min="1" max="100" data-bind="value: speed">
                         </li>
+                        <li>
+                            <label>Number of Games: <span data-bind="text: numGames"></span></label>
+                            <input class="fps-control" type="range" min="1" max="100" data-bind="value: speed">
+                        </li>
                     </ul>
                 </div>
             </div>
             <ul id="game-boards" data-bind="foreach: users, fadeVisible: user">
                 <li>
                     <h2 data-bind="text: name"></h2>
-                    <div>Score: <span data-bind="text: score"></span></div>
+                    <div>Score: <span data-bind="text: totalScore"></span></div>
+                    <div>Game: <span data-bind="text: gameNumber() + 1"></span></div>
                     <canvas data-bind="attr: { id: boardId }" width="320" height="320"></canvas>
                     <div data-bind="text: initialize()"></div> <!-- Hack to run the init() function after the canvas exists -->
                 </li>
