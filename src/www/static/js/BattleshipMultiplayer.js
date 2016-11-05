@@ -20,6 +20,13 @@ function BattleshipMultiplayerViewModel() {
     self.gameOver = ko.observable(true);
 
     self.start = function() {
+        // make sure there aren't too many ships, arbitrary validation
+        debugger;
+        if (self.numShips() > (self.gridSize() * self.gridSize()) / 5) {
+            alert('Too many ships for grid size');
+            return;
+        }
+
         self.games([]);
         $.each(self.users, function(uid, user) {
             var multiplayerGame = new BattleshipMultiplayerUserViewModel(user, self.games().length, self.gridSize(), self.numShips());
