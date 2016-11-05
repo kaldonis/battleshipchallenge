@@ -209,7 +209,8 @@ function BattleshipGameViewModel(canvas, gridSize, numShips) {
     };
 
     self.gameWon = function() {
-        self.gameCanvas.drawMessage('SCORE: ' + self.score());
+        self.gameOver();
+        //self.gameCanvas.drawMessage('SCORE: ' + self.score());
     };
 
     self.gameOver = function() {
