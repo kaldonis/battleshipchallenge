@@ -104,15 +104,18 @@ function BattleshipChallengeViewModel(canvas) {
     self.gameLoop = function () {
         if (self.over() == false) {
             var gameState = backupGameState();
+            var koTemp = window.ko;
             try {  // Wrapped in try-catch since getMove is user code
                 var move = self.getMove();
             } finally {
+                window.ko = koTemp;
                 restoreGameState(gameState);
             }
 
             var result = self.game.doMove(move);
             if (result == 'END') {  // so hacky
                 self.over(true);
+                clearInterval(self.intervalTimer);
                 self.updateHighScore(self.game.score());
             }
         }
@@ -167,11 +170,13 @@ function BattleshipChallengeViewModel(canvas) {
 }
 
 
-function BattleshipGameViewModel(canvas) {
+function BattleshipGameViewModel(canvas, gridSize, numShips) {
     var self = this;
 
-    self.boardWidth = 10;
-    self.boardHeight = 10;
+    self.boardWidth = gridSize || 10;
+    self.boardHeight = gridSize || 10;
+    self.numShips = numShips || 5;
+
     self.gameCanvas = new GameCanvasViewModel(canvas);
     self.gridSquareSize = self.gameCanvas.canvas.width / self.boardWidth;
     self.board = [];
@@ -259,7 +264,7 @@ function BattleshipGameViewModel(canvas) {
     self.createAndPlaceShips = function() {
         var shipSizes = [2, 3, 3, 4, 5];
 
-        for (var i=0; i<shipSizes.length; i++) {
+        for (var i=0; i<self.numShips; i++) {
             do {
                 // start with a random coordinate
                 var x = Math.floor(Math.random() * self.boardWidth);
@@ -269,7 +274,7 @@ function BattleshipGameViewModel(canvas) {
                 var shipCoords = [];
                 var j = null;
                 if (direction == 0) {  // UP
-                    for(j=y; j>y-shipSizes[i]; j--) {
+                    for(j=y; j>y-shipSizes[i % shipSizes.length]; j--) {
                         if(j < 0) {
                             canPlace = false;
                             break;
@@ -282,7 +287,7 @@ function BattleshipGameViewModel(canvas) {
                     }
                 }
                 else if(direction == 1) {  // RIGHT
-                    for(j=x; j<x+shipSizes[i]; j++) {
+                    for(j=x; j<x+shipSizes[i % shipSizes.length]; j++) {
                         if(j >= self.boardWidth) {
                             canPlace = false;
                             break;
@@ -295,7 +300,7 @@ function BattleshipGameViewModel(canvas) {
                     }
                 }
                 else if(direction == 2) {  // DOWN
-                    for(j=y; j<y+shipSizes[i]; j++) {
+                    for(j=y; j<y+shipSizes[i % shipSizes.length]; j++) {
                         if(j >= self.boardHeight) {
                             canPlace = false;
                             break;
@@ -308,7 +313,7 @@ function BattleshipGameViewModel(canvas) {
                     }
                 }
                 else if(direction == 3) {  // LEFT
-                    for(j=x; j>x-shipSizes[i]; j--) {
+                    for(j=x; j>x-shipSizes[i % shipSizes.length]; j--) {
                         if(j < 0) {
                             canPlace = false;
                             break;

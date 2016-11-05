@@ -3,7 +3,7 @@ function BattleshipMultiplayerViewModel() {
 
     self.user = ko.observable();
     self.database = null;
-    self.users = ko.observableArray([]);
+    self.games = ko.observableArray([]);
 
     self.speed = ko.observable(10);
     self.speed.subscribe(function() {
@@ -12,22 +12,32 @@ function BattleshipMultiplayerViewModel() {
         }
     });
     self.numGames = ko.observable(5);
-    self.shipLayouts = [];
+    self.gridSize = ko.observable(10);
+    self.numShips = ko.observable(5);
 
+    self.shipLayouts = [];
     self.ships = [];
     self.gameOver = ko.observable(true);
 
     self.start = function() {
+        self.games([]);
+        $.each(self.users, function(uid, user) {
+            var multiplayerGame = new BattleshipMultiplayerUserViewModel(user, self.games().length, self.gridSize(), self.numShips());
+            self.games.push(multiplayerGame);
+        });
+
         self.shipLayouts = [];
-        if(self.users().length > 0) {
+        if(self.games().length > 0) {
             // generate as many ship layouts as we're gonna need
-            var firstUser = self.users()[0];
+            var firstUser = self.games()[0];
             for(var i=0; i<self.numGames(); i++) {
                 firstUser.start();
                 self.shipLayouts.push(firstUser.game().ships);
             }
 
-            ko.utils.arrayForEach(self.users(), function (user) {
+            ko.utils.arrayForEach(self.games(), function (user) {
+                user.gameNumber(0);
+                user.score(0);
                 user.start(self.shipLayouts[0]);
             });
             self.gameOver(false);
@@ -46,17 +56,18 @@ function BattleshipMultiplayerViewModel() {
     self.gameLoop = function() {
         var allGamesOver = true;
         var koTemp = window.ko;
-        self.users().forEach(function(user) {
-            if (user.gameOver() == false) {
-                allGamesOver = false;
+        self.games().forEach(function(user) {
+            if (!user.gameOver()) {
                 window.ko = undefined;
                 try {
                     var move = user.game().getMove();
                     user.doMove(move);
+                    allGamesOver = false;
                 }
                 catch(e) {
                     console.error(e);
                     user.game().gameOver();
+                    user.gameOver(true);
                 }
                 finally {
                     window.ko = koTemp;
@@ -73,14 +84,18 @@ function BattleshipMultiplayerViewModel() {
             }
         });
         window.ko = koTemp;
-        self.gameOver(allGamesOver);
+
+        if (allGamesOver) {
+            clearInterval(self.intervalTimer);
+            self.gameOver(allGamesOver);
+        }
 
         self.sortByScore();
     };
 
     self.sortByScore = function() {
         $('#game-boards li').snapshotStyles();
-        self.users.sort(function (a, b) {
+        self.games.sort(function (a, b) {
             return a.totalScore() >= b.totalScore() ? -1 : 1;
         });
         $('#game-boards li').releaseSnapshot();
@@ -88,10 +103,10 @@ function BattleshipMultiplayerViewModel() {
 
     self.initialize = function() {
         self.database.ref('/users').once('value').then(function(snapshot) {
-            var users = snapshot.val();
-            $.each(users, function(uid, user) {
-                var multiplayerUser = new BattleshipMultiplayerUserViewModel(user, self.users().length);
-                self.users.push(multiplayerUser);
+            self.users = snapshot.val();
+            $.each(self.users, function(uid, user) {
+                var multiplayerGame = new BattleshipMultiplayerUserViewModel(user, self.games().length, self.gridSize(), self.numShips());
+                self.games.push(multiplayerGame);
             });
         });
 
@@ -149,8 +164,11 @@ function BattleshipMultiplayerViewModel() {
 }
 
 
-function BattleshipMultiplayerUserViewModel(user, index) {
+function BattleshipMultiplayerUserViewModel(user, index, gridSize, numShips) {
     var self = this;
+
+    self.gridSize = gridSize;
+    self.numShips = numShips;
 
     self.game = ko.observable();
     self.boardId = ko.observable('board' + index);
@@ -188,7 +206,7 @@ function BattleshipMultiplayerUserViewModel(user, index) {
         }
         self.initialized = true;
         self.canvas = document.getElementById(self.boardId());
-        self.game(new BattleshipGameViewModel(self.canvas));
+        self.game(new BattleshipGameViewModel(self.canvas, self.gridSize, self.numShips));
         self.game().initialize();
         self.game().setGetMoveFunction(self.user().script);
     };

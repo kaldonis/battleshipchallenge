@@ -27,11 +27,11 @@
     <div id="firebaseui-auth-container" style="display: none;" data-bind="visible: !user()"></div>
     <div class="navbar">
         <div class="navbar-inner">
-            <a class="brand active" href="index.html">Battleship Scripting Challenge</a>
+            <a class="brand" href="index.html">Battleship Scripting Challenge</a>
             <ul class="nav">
                 <li><a href="documentation.html">Documentation</a></li>
                 <li><a href="leaderboard.html">Leaderboard</a></li>
-                <li><a href="multiplayer.html">Multiplayer</a></li>
+                <li class="active"><a href="multiplayer.html">Multiplayer</a></li>
             </ul>
         </div>
     </div>
@@ -49,13 +49,21 @@
                             <input class="fps-control" type="range" min="1" max="100" data-bind="value: speed">
                         </li>
                         <li>
-                            <label>Number of Games: <span data-bind="text: numGames"></span></label>
-                            <input class="fps-control" type="range" min="1" max="100" data-bind="value: speed">
+                            <label>Games: <span data-bind="text: numGames"></span></label>
+                            <input class="fps-control" type="range" min="1" max="100" data-bind="value: numGames">
+                        </li>
+                        <li>
+                            <label>Ships: <span data-bind="text: numShips"></span></label>
+                            <input class="fps-control" type="range" min="5" max="100" data-bind="value: numShips">
+                        </li>
+                        <li>
+                            <label>Grid Size: <span data-bind="text: gridSize"></span></label>
+                            <input class="fps-control" type="range" min="10" max="40" data-bind="value: gridSize">
                         </li>
                     </ul>
                 </div>
             </div>
-            <ul id="game-boards" data-bind="foreach: users, fadeVisible: user">
+            <ul id="game-boards" data-bind="foreach: games, fadeVisible: user">
                 <li>
                     <h2 data-bind="text: name"></h2>
                     <div>Score: <span data-bind="text: totalScore"></span></div>
