@@ -399,8 +399,15 @@ function BattleshipGameViewModel(canvas, gridSize, numShips) {
     };
 
     self.doMove = function(move) {
-        var x = move[0];
-        var y = move[1];
+        try {
+            var x = move[0];
+            var y = move[1];
+        }
+        catch(e) {
+            console.error(e);
+            self.gameOver();
+            return 'END';
+        }
         console.log("["+ x +", "+ y +"]");
         var target = self.board[y][x];
         if(!target) {
@@ -439,7 +446,9 @@ function BattleshipGameViewModel(canvas, gridSize, numShips) {
                     isHidden: !target.hit(),
                     isMiss: target.hit() && target.type == WATER,
                     isHit: target.hit() && target.type == SHIP,
-                    isSunk: target.hit() && target.type == SHIP ? target.ship.isDestroyed() : false
+                    isSunk: target.hit() && target.type == SHIP ? target.ship.isDestroyed() : false,
+                    x: x,
+                    y: y
                 })
             }
         }

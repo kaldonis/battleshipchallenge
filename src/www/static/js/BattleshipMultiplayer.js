@@ -21,7 +21,6 @@ function BattleshipMultiplayerViewModel() {
 
     self.start = function() {
         // make sure there aren't too many ships, arbitrary validation
-        debugger;
         if (self.numShips() > (self.gridSize() * self.gridSize()) / 5) {
             alert('Too many ships for grid size');
             return;
