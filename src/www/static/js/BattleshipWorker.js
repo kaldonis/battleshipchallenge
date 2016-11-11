@@ -95,4 +95,7 @@ self.addEventListener('message', function(e) {
     if (e.data.CODE != undefined) {
         self.game.setGetMoveFunction(e.data.CODE);
     }
+    if (e.data.GET_MOVE) {
+        self.game.getMove();
+    }
 }, false);

@@ -259,7 +259,7 @@ function BattleshipGameViewModel(canvas, gridSize, numShips) {
         ship.parts.forEach(function(part) {
             self.board[part.y][part.x] = part;
         });
-        self.drawShip(ship);
+        self.drawShip(ship, self.ships.length);
     };
 
     self.createAndPlaceShips = function() {
@@ -343,7 +343,7 @@ function BattleshipGameViewModel(canvas, gridSize, numShips) {
 
             var x = gridX * self.gridSquareSize;
             var y = gridY * self.gridSquareSize;
-            self.gameCanvas.drawRect(x, y, self.gridSquareSize, self.gridSquareSize, '#666666');
+            self.gameCanvas.drawRect(x, y, self.gridSquareSize, self.gridSquareSize, '#' + Array(7).join(ship.size));
         });
     };
 
@@ -463,6 +463,7 @@ function BattleshipGameViewModel(canvas, gridSize, numShips) {
                 isSunk: ship.isDestroyed()
             });
         });
+        return ships;
     };
 
     self.sandbox = new BattleshipGameSandbox({
